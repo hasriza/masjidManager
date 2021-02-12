@@ -1,31 +1,28 @@
-/* eslint-disable react-native/no-inline-styles */
-import React, {useEffect} from 'react';
-import {View, ActivityIndicator} from 'react-native';
+import {ActivityIndicator, Alert, Platform, View} from 'react-native';
 import {
   NavigationContainer,
-  DefaultTheme as NavigationDefaultTheme,
   DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
 } from '@react-navigation/native';
-import {createDrawerNavigator} from '@react-navigation/drawer';
-
 import {
-  Provider as PaperProvider,
-  DefaultTheme as PaperDefaultTheme,
   DarkTheme as PaperDarkTheme,
+  DefaultTheme as PaperDefaultTheme,
+  Provider as PaperProvider,
 } from 'react-native-paper';
-
-import {DrawerContent} from './screens/DrawerContent';
-
-import MainTabScreen from './screens/MainTabScreen';
-import SupportScreen from './screens/SupportScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import BookmarkScreen from './screens/BookmarkScreen';
-
-import {AuthContext} from './components/context';
-
-import RootStackScreen from './screens/RootStackScreen';
+/* eslint-disable react-native/no-inline-styles */
+import React, {useEffect} from 'react';
 
 import AsyncStorage from '@react-native-community/async-storage';
+import {AuthContext} from './container/context';
+import BookmarkScreen from './components/BookmarkScreen';
+import {DrawerContent} from './components/DrawerContent';
+import GetMenu from './container/GetMenu';
+import MainTabScreen from './components/MainTabScreen';
+import NetInfo from '@react-native-community/netinfo';
+import RootStackScreen from './components/RootStackScreen';
+import SettingsScreen from './components/SettingsScreen';
+import SupportScreen from './components/SupportScreen';
+import {createDrawerNavigator} from '@react-navigation/drawer';
 
 const Drawer = createDrawerNavigator();
 
@@ -33,15 +30,21 @@ const App = () => {
   // const [isLoading, setIsLoading] = React.useState(true);
   // const [userToken, setUserToken] = React.useState(null);
 
-  global.sAddr =
-    'http://192.168.2.13:82/MQWeb/php/Login.php?action=LoginAuthentification';
+  global.sAddr = 'http://192.168.2.8:82/MQWeb/php';
 
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
 
   const initialLoginState = {
     isLoading: true,
     userName: null,
+    password: null,
     userToken: null,
+    isOnline: true,
+    keycode: null,
+    parentKeyCode: null,
+    parentName: null,
+    superUser: null,
+    menu: null,
   };
 
   const CustomDefaultTheme = {
@@ -67,6 +70,8 @@ const App = () => {
   };
 
   const theme = isDarkTheme ? CustomDarkTheme : CustomDefaultTheme;
+  let themeType = React.useRef();
+  themeType.current = isDarkTheme;
 
   const loginReducer = (prevState, action) => {
     switch (action.type) {
@@ -75,11 +80,14 @@ const App = () => {
           ...prevState,
           userToken: action.token,
           isLoading: false,
+          userName: action.name,
+          password: action.password,
         };
       case 'LOGIN':
         return {
           ...prevState,
           userName: action.id,
+          password: action.pass,
           userToken: action.token,
           isLoading: false,
         };
@@ -87,15 +95,22 @@ const App = () => {
         return {
           ...prevState,
           userName: null,
+          password: null,
           userToken: null,
           isLoading: false,
         };
-      case 'REGISTER':
+      case 'SET_USER_DETAILS':
         return {
           ...prevState,
-          userName: action.id,
-          userToken: action.token,
-          isLoading: false,
+          keycode: action.kcode,
+          parentKeyCode: action.pkcode,
+          parentName: action.pname,
+          superUser: action.su,
+        };
+      case 'COLLECT_MENU':
+        return {
+          ...prevState,
+          menuItems: action.menu,
         };
     }
   };
@@ -107,61 +122,127 @@ const App = () => {
 
   const authContext = React.useMemo(
     () => ({
-      signIn: async (foundUser) => {
+      store: loginState,
+      signIn: async (user) => {
         // setUserToken('fgkj');
         // setIsLoading(false);
-        const userToken = String(foundUser[0].userToken);
-        const userName = foundUser[0].username;
-
+        const userToken = String(user[0].userToken);
+        const userName = user[0].username;
+        const password = user[0].password;
         try {
           await AsyncStorage.setItem('userToken', userToken);
+          await AsyncStorage.setItem('userName', userName);
+          await AsyncStorage.setItem('password', password);
         } catch (e) {
           console.log(e);
         }
         // console.log('user token: ', userToken);
-        dispatch({type: 'LOGIN', id: userName, token: userToken});
+        dispatch({
+          type: 'LOGIN',
+          id: userName,
+          pass: password,
+          token: userToken,
+        });
       },
       signOut: async () => {
         // setUserToken(null);
         // setIsLoading(false);
         try {
           await AsyncStorage.removeItem('userToken');
+          await AsyncStorage.removeItem('userName');
+          await AsyncStorage.removeItem('password');
         } catch (e) {
           console.log(e);
         }
         dispatch({type: 'LOGOUT'});
       },
-      signUp: () => {
-        // setUserToken('fgkj');
-        // setIsLoading(false);
-      },
-      toggleTheme: () => {
+      toggleTheme: async () => {
         // eslint-disable-next-line no-shadow
         setIsDarkTheme((isDarkTheme) => !isDarkTheme);
+        try {
+          themeType.current = !themeType.current;
+          await AsyncStorage.setItem('theme', themeType.current.toString());
+        } catch (e) {
+          console.log(e);
+        }
+      },
+      checkOnline: () => {
+        if (Platform.OS === 'android') {
+          NetInfo.fetch().then((state) => {
+            if (state.isInternetReachable) {
+              return;
+            } else {
+              Alert.alert('Connection Error!', 'Check Internet', [
+                {text: 'Okay'},
+              ]);
+            }
+          });
+        } else {
+          // For iOS devices
+          NetInfo.addEventListener(
+            'connectionChange',
+            this.handleFirstConnectivityChange,
+          );
+        }
+      },
+      setUserDets: async (userDetails) => {
+        const kcode = userDetails.keycode;
+        const pkcode = userDetails.parentKeyCode;
+        const pname = userDetails.parentName;
+        const su = userDetails.superUser;
+
+        dispatch({type: 'SET_USER_DETAILS', kcode, pkcode, pname, su});
+      },
+      collectMenu: (menu) => {
+        dispatch({type: 'COLLECT_MENU', menu: menu});
       },
     }),
-    [],
+    [loginState],
   );
+
+  const handleFirstConnectivityChange = (state) => {
+    NetInfo.removeEventListener(
+      'connectionChange',
+      this.handleFirstConnectivityChange,
+    );
+
+    if (state.isConnected === false) {
+      Alert.alert('Connection Error!', 'Check Internet', [{text: 'Okay'}]);
+    } else {
+      return;
+    }
+  };
 
   useEffect(() => {
     setTimeout(async () => {
       // setIsLoading(false);
-      let userToken;
-      userToken = null;
+      let userToken = null;
+      let userName = null;
+      let password = null;
+      let dTheme = false;
       try {
         userToken = await AsyncStorage.getItem('userToken');
+        userName = await AsyncStorage.getItem('userName');
+        password = await AsyncStorage.getItem('password');
+        dTheme = await AsyncStorage.getItem('theme');
       } catch (e) {
         console.log(e);
       }
+      setIsDarkTheme(dTheme === 'true' ? true : false);
       // console.log('user token: ', userToken);
-      dispatch({type: 'RETRIEVE_TOKEN', token: userToken});
+      dispatch({
+        type: 'RETRIEVE_TOKEN',
+        token: userToken,
+        name: userName,
+        password: password,
+      });
     }, 1000);
   }, []);
 
   if (loginState.isLoading) {
     return (
       <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#00ff00" />
       </View>
     );
   }
@@ -173,7 +254,7 @@ const App = () => {
             <Drawer.Navigator
               drawerContent={(props) => <DrawerContent {...props} />}>
               <Drawer.Screen
-                name="HomeDrawer"
+                name="Home"
                 component={MainTabScreen}
                 // options={serverAddress}
               />

@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-native-community/async-storage": "^1.9.0",
     "@react-native-community/masked-view": "^0.1.6",
+    "@react-native-community/netinfo": "^5.9.10",
     "@react-native-community/toolbar-android": "0.1.0-rc.2",
     "@react-navigation/drawer": "^5.1.1",
     "@react-navigation/material-bottom-tabs": "^5.1.6",
@@ -41,5 +42,17 @@
   },
   "jest": {
     "preset": "react-native"
+  },
+  "importSort": {
+    ".js, .jsx, .es6, .es": {
+      "parser": "babylon",
+      "style": "eslint",
+      "options": {}
+    },
+    ".ts, .tsx": {
+      "parser": "typescript",
+      "style": "eslint",
+      "options": {}
+    }
   }
 }

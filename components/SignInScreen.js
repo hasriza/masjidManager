@@ -1,27 +1,26 @@
+import * as Animatable from 'react-native-animatable';
+
+import {
+  Alert,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import {AuthContext} from '../container/context';
+import Feather from 'react-native-vector-icons/Feather';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import LinearGradient from 'react-native-linear-gradient';
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Platform,
-  StyleSheet,
-  StatusBar,
-  Alert,
-} from 'react-native';
-import * as Animatable from 'react-native-animatable';
-import LinearGradient from 'react-native-linear-gradient';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Feather from 'react-native-vector-icons/Feather';
-
 import axios from 'axios';
-
 import {useTheme} from 'react-native-paper';
 
-import {AuthContext} from '../components/context';
-
-const SignInScreen = ({navigation, route}) => {
+const SignInScreen = ({navigation}) => {
   const [data, setData] = React.useState({
     username: '',
     password: '',
@@ -33,10 +32,12 @@ const SignInScreen = ({navigation, route}) => {
 
   const {colors} = useTheme();
 
-  const {signIn} = React.useContext(AuthContext);
+  const {signIn, checkOnline} = React.useContext(AuthContext);
+
+  checkOnline();
 
   const textInputChange = (val) => {
-    if (val.trim().length >= 4) {
+    if (val.trim().length > 0) {
       setData({
         ...data,
         username: val,
@@ -54,7 +55,7 @@ const SignInScreen = ({navigation, route}) => {
   };
 
   const handlePasswordChange = (val) => {
-    if (val.trim().length >= 8) {
+    if (val.trim().length > 0) {
       setData({
         ...data,
         password: val,
@@ -77,7 +78,7 @@ const SignInScreen = ({navigation, route}) => {
   };
 
   const handleValidUser = (val) => {
-    if (val.trim().length >= 4) {
+    if (val.trim().length > 0) {
       setData({
         ...data,
         isValidUser: true,
@@ -91,33 +92,13 @@ const SignInScreen = ({navigation, route}) => {
   };
 
   const loginHandle = (userName, password) => {
-    // const foundUser = Users.filter((item) => {
-    //   return userName == item.username && password == item.password;
-    // });
-    // if (data.username.length == 0 || data.password.length == 0) {
-    //   Alert.alert(
-    //     'Wrong Input!',
-    //     'Username or password field cannot be empty.',
-    //     [{text: 'Okay'}],
-    //   );
-    //   return;
-    // }
-    // if (foundUser.length == 0) {
-    //   Alert.alert('Invalid User!', 'Username or password is incorrect.', [
-    //     {text: 'Okay'},
-    //   ]);
-    //   return;
-    // }
-    // console.log(foundUser);
-    // signIn(foundUser);
-    //
-    //
     if (userName.length === 0 || password.length === 0) {
       Alert.alert(
         'Wrong Input!',
         'Username or password field cannot be empty.',
         [{text: 'Okay'}],
       );
+      setData({isValidPassword: false, isValidUser: false});
       return;
     }
     var formData = new FormData();
@@ -125,33 +106,35 @@ const SignInScreen = ({navigation, route}) => {
     formData.append('passwordtxt', password);
 
     axios
-      .post(global.sAddr, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      .post(
+        global.sAddr + '/Login.php?action=LoginAuthentification',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         },
-      })
+      )
       .then(
         (response) => {
-          console.log(response.data);
           if (response.data === 0) {
             Alert.alert('Invalid User!', 'Username or password is incorrect.', [
               {text: 'Okay'},
             ]);
             return;
           }
-          var x = [
+          var userCred = [
             {
-              // email: 'user1@email.com',
-              // id: 1,
-              // password: 'password',
-              // userToken: 'token123',
-              username: 'user1',
+              userToken: '123',
+              username: userName,
+              password: password,
             },
           ];
-          signIn(x);
+          signIn(userCred);
         },
         (error) => {
-          console.log(error);
+          Alert.alert('Service Unreachable.', [{text: 'Okay'}]);
+          return;
         },
       );
   };
@@ -202,9 +185,7 @@ const SignInScreen = ({navigation, route}) => {
         </View>
         {data.isValidUser ? null : (
           <Animatable.View animation="fadeInLeft" duration={500}>
-            <Text style={styles.errorMsg}>
-              Username must be 4 characters long.
-            </Text>
+            <Text style={styles.errorMsg}>Enter Username here</Text>
           </Animatable.View>
         )}
 
@@ -243,9 +224,7 @@ const SignInScreen = ({navigation, route}) => {
         </View>
         {data.isValidPassword ? null : (
           <Animatable.View animation="fadeInLeft" duration={500}>
-            <Text style={styles.errorMsg}>
-              Password must be 8 characters long.
-            </Text>
+            <Text style={styles.errorMsg}>Enter Password here</Text>
           </Animatable.View>
         )}
 
@@ -273,27 +252,6 @@ const SignInScreen = ({navigation, route}) => {
                 Sign In
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('SignUpScreen')}
-            style={[
-              styles.signIn,
-              {
-                borderColor: '#009387',
-                borderWidth: 1,
-                marginTop: 15,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.textSign,
-                {
-                  color: '#009387',
-                },
-              ]}>
-              Sign Up
-            </Text>
           </TouchableOpacity>
         </View>
       </Animatable.View>

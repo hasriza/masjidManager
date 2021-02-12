@@ -1,28 +1,30 @@
-import React from 'react';
-import {View, StyleSheet} from 'react-native';
 import {
-  useTheme,
   Avatar,
-  Title,
   Caption,
-  Paragraph,
   Drawer,
-  Text,
-  TouchableRipple,
+  Paragraph,
   Switch,
+  Text,
+  Title,
+  TouchableRipple,
+  useTheme,
 } from 'react-native-paper';
 import {DrawerContentScrollView, DrawerItem} from '@react-navigation/drawer';
+/* eslint-disable react-native/no-inline-styles */
+import {StyleSheet, View} from 'react-native';
 
+import {AuthContext} from '../container/context';
+import GetMenu from '../container/GetMenu';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import Iconx from 'react-native-vector-icons/Ionicons';
-
-import {AuthContext} from '../components/context';
+import React from 'react';
 
 export function DrawerContent(props) {
   const paperTheme = useTheme();
 
-  const {signOut, toggleTheme} = React.useContext(AuthContext);
+  const {signOut, toggleTheme, checkOnline} = React.useContext(AuthContext);
+
+  checkOnline();
 
   return (
     <View style={{flex: 1}}>
@@ -105,6 +107,7 @@ export function DrawerContent(props) {
               }}
             />
           </Drawer.Section>
+          <GetMenu />
           <Drawer.Section title="Preferences">
             <TouchableRipple
               onPress={() => {
