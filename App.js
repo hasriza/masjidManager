@@ -16,7 +16,6 @@ import AsyncStorage from '@react-native-community/async-storage';
 import {AuthContext} from './container/context';
 import BookmarkScreen from './components/BookmarkScreen';
 import {DrawerContent} from './components/DrawerContent';
-import GetMenu from './container/GetMenu';
 import MainTabScreen from './components/MainTabScreen';
 import NetInfo from '@react-native-community/netinfo';
 import RootStackScreen from './components/RootStackScreen';
@@ -33,19 +32,6 @@ const App = () => {
   global.sAddr = 'http://192.168.2.8:82/MQWeb/php';
 
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
-
-  const initialLoginState = {
-    isLoading: true,
-    userName: null,
-    password: null,
-    userToken: null,
-    isOnline: true,
-    keycode: null,
-    parentKeyCode: null,
-    parentName: null,
-    superUser: null,
-    menu: null,
-  };
 
   const CustomDefaultTheme = {
     ...NavigationDefaultTheme,
@@ -73,6 +59,20 @@ const App = () => {
   let themeType = React.useRef();
   themeType.current = isDarkTheme;
 
+  const initialLoginState = {
+    isLoading: true,
+    userName: null,
+    password: null,
+    userToken: null,
+    isOnline: true,
+    keycode: null,
+    parentKeyCode: null,
+    parentName: null,
+    superUser: null,
+    menu: null,
+    currTheme: false,
+  };
+
   const loginReducer = (prevState, action) => {
     switch (action.type) {
       case 'RETRIEVE_TOKEN':
@@ -89,6 +89,7 @@ const App = () => {
           userName: action.id,
           password: action.pass,
           userToken: action.token,
+          resData: action.resData,
           isLoading: false,
         };
       case 'LOGOUT':
@@ -111,6 +112,11 @@ const App = () => {
         return {
           ...prevState,
           menuItems: action.menu,
+        };
+      case 'THEME_TOGGLED':
+        return {
+          ...prevState,
+          currTheme: action.currTheme,
         };
     }
   };
@@ -147,6 +153,7 @@ const App = () => {
       signOut: async () => {
         // setUserToken(null);
         // setIsLoading(false);
+        console.log(loginState);
         try {
           await AsyncStorage.removeItem('userToken');
           await AsyncStorage.removeItem('userName');
@@ -165,6 +172,8 @@ const App = () => {
         } catch (e) {
           console.log(e);
         }
+
+        dispatch({type: 'THEME_TOGGLED', currTheme: isDarkTheme});
       },
       checkOnline: () => {
         if (Platform.OS === 'android') {
@@ -185,7 +194,7 @@ const App = () => {
           );
         }
       },
-      setUserDets: async (userDetails) => {
+      setUserDets: (userDetails) => {
         const kcode = userDetails.keycode;
         const pkcode = userDetails.parentKeyCode;
         const pname = userDetails.parentName;
@@ -194,7 +203,7 @@ const App = () => {
         dispatch({type: 'SET_USER_DETAILS', kcode, pkcode, pname, su});
       },
       collectMenu: (menu) => {
-        dispatch({type: 'COLLECT_MENU', menu: menu});
+        dispatch({type: 'COLLECT_MENU', menu});
       },
     }),
     [loginState],
@@ -254,7 +263,7 @@ const App = () => {
             <Drawer.Navigator
               drawerContent={(props) => <DrawerContent {...props} />}>
               <Drawer.Screen
-                name="Home"
+                name="HomeScreen"
                 component={MainTabScreen}
                 // options={serverAddress}
               />

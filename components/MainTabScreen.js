@@ -1,14 +1,11 @@
-import React from 'react';
-
-import {createMaterialBottomTabNavigator} from '@react-navigation/material-bottom-tabs';
-import {createStackNavigator} from '@react-navigation/stack';
-
-import Icon from 'react-native-vector-icons/Ionicons';
-
-import HomeScreen from './HomeScreen';
 import DetailsScreen from './DetailsScreen';
 import ExploreScreen from './ExploreScreen';
+import HomeScreen from './HomeScreen';
+import Icon from 'react-native-vector-icons/Ionicons';
 import ProfileScreen from './ProfileScreen';
+import React from 'react';
+import {createMaterialBottomTabNavigator} from '@react-navigation/material-bottom-tabs';
+import {createStackNavigator} from '@react-navigation/stack';
 
 const HomeStack = createStackNavigator();
 const DetailsStack = createStackNavigator();
@@ -42,7 +39,7 @@ const MainTabScreen = () => (
       }}
     />
     <Tab.Screen
-      name="Profile"
+      name="ProfileX"
       component={ProfileStackScreen}
       options={{
         tabBarLabel: 'Profile',
@@ -112,6 +109,7 @@ const DetailsStackScreen = ({navigation}) => (
       name="Details"
       component={DetailsScreen}
       options={{
+        title: 'Details View',
         headerLeft: () => (
           <Icon.Button
             name="ios-menu"
@@ -137,7 +135,7 @@ const ProfileStackScreen = ({navigation}) => (
       },
     }}>
     <ProfileStack.Screen
-      name="Home"
+      name="Profile"
       component={ProfileScreen}
       options={{
         title: 'Profile',
@@ -166,7 +164,7 @@ const ExploreStackScreen = ({navigation}) => (
       },
     }}>
     <ExploreStack.Screen
-      name="Home"
+      name="Explore"
       component={ExploreScreen}
       options={{
         title: 'Explore',

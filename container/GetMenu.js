@@ -1,24 +1,39 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import {Alert, Text} from 'react-native';
+import {Alert, Image, Text, View} from 'react-native';
 
 import {AuthContext} from './context';
-import {List} from 'react-native-paper';
+import {Drawer} from 'react-native-paper';
 import React from 'react';
+import TreeView from 'react-native-final-tree-view';
 import axios from 'axios';
 
 // import {List} from 'react-native-paper';
 
-const GetMenu = () => {
-  const [userDetails, setUserDetails] = React.useState([]);
-  const [menuItems, setMenuItems] = React.useState([]);
-
+const GetMenu = (props) => {
   const {signOut, setUserDets, store, collectMenu} = React.useContext(
     AuthContext,
   );
 
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [menuFinal, setMenuFinal] = React.useState([]);
+  const [userDetails, setUserDetails] = React.useState([]);
+
+  const textColor = store.currTheme ? '#333333' : '#ffffff';
+
+  const storeChecker = store.menu === null ? false : true;
+
   React.useEffect(() => {
-    if (store.menu === null) {
+    if (storeChecker) {
+      console.log(userDetails, menuFinal);
+      setUserDets(userDetails);
+      collectMenu(menuFinal);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!storeChecker) {
       const user = store;
       var formData = new FormData();
       formData.append('username', user.userName);
@@ -47,7 +62,6 @@ const GetMenu = () => {
               parentName: response.data.PARENTNAME,
               superUser: response.data.SUPERUSER,
             });
-            setUserDets(userDetails);
             var x = new FormData();
             x.append('userkey', response.data.KEYCODE);
             return axios.post(global.sAddr + '/menu.php?action=LoadMenu', x, {
@@ -73,46 +87,100 @@ const GetMenu = () => {
               signOut();
             }
             //success
-            setMenuItems(res.data);
-            collectMenu(res.data);
+            setMenuFinal(res.data);
           },
           (error) => {
             Alert.alert('Service Unreachable.', [{text: 'Okay'}]);
             return;
           },
-        );
+        )
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, []);
 
+  function treeGen(menu) {
+    var map = {},
+      node,
+      roots = [],
+      i;
+
+    for (i = 0; i < menu.length; i += 1) {
+      map[menu[i].KEYCODE] = i;
+      menu[i].id = menu[i].KEYCODE;
+      menu[i].children = [];
+    }
+    for (i = 0; i < menu.length; i += 1) {
+      node = menu[i];
+      if (node.PARENTKEYCODE !== '0') {
+        menu[map[node.PARENTKEYCODE]].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    return roots;
+  }
+
+  function getIndicator(isExpanded, hasChildrenNodes) {
+    if (!hasChildrenNodes) {
+      return '*';
+    } else if (isExpanded) {
+      return '⤴';
+    } else {
+      return '⤵';
+    }
+  }
+
+  console.log(store.currTheme, textColor);
+
   return (
-    <Text></Text>
-    // <List.AccordionGroup>
-    //   {menuItems
-    //     .filter((mainMenuItem) => mainMenuItem.PARENTKEYCODE === '0')
-    //     .map((mainItem) => (
-    //       <List.Accordion
-    //         key={mainItem.KEYCODE}
-    //         title={mainItem.MENUNAME}
-    //         id={mainItem.KEYCODE}>
-    //         {menuItems
-    //           .filter(
-    //             (childList) => childList.PARENTKEYCODE === mainItem.KEYCODE,
-    //           )
-    //           .map((child) => (
-    //             <List.Accordion
-    //               key={child.KEYCODE}
-    //               title={child.MENUNAME}
-    //               id={child.KEYCODE}>
-    //               {menuItems
-    //                 .filter((leaf) => leaf.PARENTKEYCODE === child.KEYCODE)
-    //                 .map((c) => (
-    //                   <List.Item key={c.KEYCODE} title={c.MENUNAME} />
-    //                 ))}
-    //             </List.Accordion>
-    //           ))}
-    //       </List.Accordion>
-    //     ))}
-    // </List.AccordionGroup>
+    <View>
+      {isLoading && <Text>Loading...</Text>}
+      {!isLoading && (
+        <Drawer.Section title="Operations" styles={props.style}>
+          <TreeView
+            key="finalTreeRendered"
+            data={treeGen(menuFinal)} // defined above
+            renderNode={({node, level, isExpanded, hasChildrenNodes}) => {
+              return (
+                <View>
+                  {hasChildrenNodes && (
+                    <Text
+                      key={node.KEYCODE}
+                      style={{
+                        color: textColor,
+                        paddingLeft: 15 * level,
+                        /*prettier-ignore*/
+                        fontSize: 16 - (level * 1.5),
+                      }}>
+                      {getIndicator(isExpanded, hasChildrenNodes)}{' '}
+                      {node.MENUNAME}
+                    </Text>
+                  )}
+                  {!hasChildrenNodes && (
+                    <Text
+                      key={node.KEYCODE}
+                      style={{
+                        color: textColor,
+                        paddingLeft: 15 * level,
+                        /*prettier-ignore*/
+                        fontSize: 16 - (level * 1.5),
+                      }}
+                      onPress={() => {
+                        Alert.alert(node.MENUNAME + ' Clicked');
+                      }}>
+                      {getIndicator(isExpanded, hasChildrenNodes)}{' '}
+                      {node.MENUNAME}
+                    </Text>
+                  )}
+                </View>
+              );
+            }}
+          />
+        </Drawer.Section>
+      )}
+    </View>
   );
 };
 

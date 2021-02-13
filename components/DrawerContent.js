@@ -22,7 +22,9 @@ import React from 'react';
 export function DrawerContent(props) {
   const paperTheme = useTheme();
 
-  const {signOut, toggleTheme, checkOnline} = React.useContext(AuthContext);
+  const {signOut, toggleTheme, checkOnline, store} = React.useContext(
+    AuthContext,
+  );
 
   checkOnline();
 
@@ -107,7 +109,7 @@ export function DrawerContent(props) {
               }}
             />
           </Drawer.Section>
-          <GetMenu />
+          <GetMenu style={styles.drawerSection} />
           <Drawer.Section title="Preferences">
             <TouchableRipple
               onPress={() => {
