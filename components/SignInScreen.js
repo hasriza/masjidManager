@@ -91,8 +91,8 @@ const SignInScreen = ({navigation}) => {
     }
   };
 
-  const loginHandle = (userName, password) => {
-    if (userName.length === 0 || password.length === 0) {
+  const loginHandle = (username, password) => {
+    if (username.length === 0 || password.length === 0) {
       Alert.alert(
         'Wrong Input!',
         'Username or password field cannot be empty.',
@@ -102,7 +102,7 @@ const SignInScreen = ({navigation}) => {
       return;
     }
     var formData = new FormData();
-    formData.append('usernametxt', userName);
+    formData.append('usernametxt', username);
     formData.append('passwordtxt', password);
 
     axios
@@ -123,11 +123,30 @@ const SignInScreen = ({navigation}) => {
             ]);
             return;
           }
+          var date = new Date().getDate();
+          var month = new Date().getMonth() + 1;
+          var year = new Date().getFullYear();
+          var hours = new Date().getHours();
+          var min = new Date().getMinutes();
+          var sec = new Date().getSeconds();
+          const checkIn =
+            date +
+            '/' +
+            month +
+            '/' +
+            year +
+            ' ' +
+            hours +
+            ':' +
+            min +
+            ':' +
+            sec;
           var userCred = [
             {
               userToken: '123',
-              username: userName,
-              password: password,
+              username,
+              password,
+              checkIn,
             },
           ];
           signIn(userCred);

@@ -9,7 +9,6 @@ import {
   DefaultTheme as PaperDefaultTheme,
   Provider as PaperProvider,
 } from 'react-native-paper';
-/* eslint-disable react-native/no-inline-styles */
 import React, {useEffect} from 'react';
 
 import AsyncStorage from '@react-native-community/async-storage';
@@ -29,7 +28,7 @@ const App = () => {
   // const [isLoading, setIsLoading] = React.useState(true);
   // const [userToken, setUserToken] = React.useState(null);
 
-  global.sAddr = 'http://192.168.2.8:82/MQWeb/php';
+  global.sAddr = 'http://192.168.2.12:82/MQWeb/php';
 
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
 
@@ -41,6 +40,8 @@ const App = () => {
       ...PaperDefaultTheme.colors,
       background: '#ffffff',
       text: '#333333',
+      grey: '#878787',
+      greyParent: '#6e6b6b',
     },
   };
 
@@ -52,6 +53,8 @@ const App = () => {
       ...PaperDarkTheme.colors,
       background: '#333333',
       text: '#ffffff',
+      grey: '#969696',
+      greyParent: '#b5b5b5',
     },
   };
 
@@ -65,12 +68,7 @@ const App = () => {
     password: null,
     userToken: null,
     isOnline: true,
-    keycode: null,
-    parentKeyCode: null,
-    parentName: null,
-    superUser: null,
-    menu: null,
-    currTheme: false,
+    checkIn: null,
   };
 
   const loginReducer = (prevState, action) => {
@@ -79,9 +77,9 @@ const App = () => {
         return {
           ...prevState,
           userToken: action.token,
-          isLoading: false,
           userName: action.name,
           password: action.password,
+          isLoading: false,
         };
       case 'LOGIN':
         return {
@@ -89,7 +87,7 @@ const App = () => {
           userName: action.id,
           password: action.pass,
           userToken: action.token,
-          resData: action.resData,
+          checkIn: action.checkin,
           isLoading: false,
         };
       case 'LOGOUT':
@@ -99,24 +97,6 @@ const App = () => {
           password: null,
           userToken: null,
           isLoading: false,
-        };
-      case 'SET_USER_DETAILS':
-        return {
-          ...prevState,
-          keycode: action.kcode,
-          parentKeyCode: action.pkcode,
-          parentName: action.pname,
-          superUser: action.su,
-        };
-      case 'COLLECT_MENU':
-        return {
-          ...prevState,
-          menuItems: action.menu,
-        };
-      case 'THEME_TOGGLED':
-        return {
-          ...prevState,
-          currTheme: action.currTheme,
         };
     }
   };
@@ -135,6 +115,7 @@ const App = () => {
         const userToken = String(user[0].userToken);
         const userName = user[0].username;
         const password = user[0].password;
+        const checkin = user[0].checkIn;
         try {
           await AsyncStorage.setItem('userToken', userToken);
           await AsyncStorage.setItem('userName', userName);
@@ -148,6 +129,7 @@ const App = () => {
           id: userName,
           pass: password,
           token: userToken,
+          checkin,
         });
       },
       signOut: async () => {
@@ -172,8 +154,6 @@ const App = () => {
         } catch (e) {
           console.log(e);
         }
-
-        dispatch({type: 'THEME_TOGGLED', currTheme: isDarkTheme});
       },
       checkOnline: () => {
         if (Platform.OS === 'android') {
@@ -190,29 +170,18 @@ const App = () => {
           // For iOS devices
           NetInfo.addEventListener(
             'connectionChange',
-            this.handleFirstConnectivityChange,
+            handleFirstConnectivityChange,
           );
         }
       },
-      setUserDets: (userDetails) => {
-        const kcode = userDetails.keycode;
-        const pkcode = userDetails.parentKeyCode;
-        const pname = userDetails.parentName;
-        const su = userDetails.superUser;
-
-        dispatch({type: 'SET_USER_DETAILS', kcode, pkcode, pname, su});
-      },
-      collectMenu: (menu) => {
-        dispatch({type: 'COLLECT_MENU', menu});
-      },
     }),
-    [loginState],
+    [handleFirstConnectivityChange, loginState],
   );
 
-  const handleFirstConnectivityChange = (state) => {
+  const handleFirstConnectivityChange = React.useCallback((state) => {
     NetInfo.removeEventListener(
       'connectionChange',
-      this.handleFirstConnectivityChange,
+      handleFirstConnectivityChange,
     );
 
     if (state.isConnected === false) {
@@ -220,7 +189,7 @@ const App = () => {
     } else {
       return;
     }
-  };
+  }, []);
 
   useEffect(() => {
     setTimeout(async () => {

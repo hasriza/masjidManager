@@ -21,6 +21,7 @@ import React from 'react';
 
 export function DrawerContent(props) {
   const paperTheme = useTheme();
+  const {colors} = useTheme();
 
   const {signOut, toggleTheme, checkOnline, store} = React.useContext(
     AuthContext,
@@ -41,8 +42,8 @@ export function DrawerContent(props) {
                 size={50}
               />
               <View style={{marginLeft: 15, flexDirection: 'column'}}>
-                <Title style={styles.title}>John Doe</Title>
-                <Caption style={styles.caption}>@j_doe</Caption>
+                <Title style={styles.title}>{store.userName}</Title>
+                <Caption style={styles.caption}>{store.checkIn}</Caption>
               </View>
             </View>
 
@@ -116,7 +117,7 @@ export function DrawerContent(props) {
                 toggleTheme();
               }}>
               <View style={styles.preference}>
-                <Text>Dark Theme</Text>
+                <Text style={{color: colors.grey}}>Dark Theme</Text>
                 <View pointerEvents="none">
                   <Switch value={paperTheme.dark} />
                 </View>

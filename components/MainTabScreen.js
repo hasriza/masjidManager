@@ -39,7 +39,7 @@ const MainTabScreen = () => (
       }}
     />
     <Tab.Screen
-      name="ProfileX"
+      name="Profile"
       component={ProfileStackScreen}
       options={{
         tabBarLabel: 'Profile',
