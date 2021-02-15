@@ -146,8 +146,8 @@ const GetMenu = (props) => {
                         paddingLeft: 0,
                       }}>
                       {getIndicator(isExpanded, hasChildrenNodes)}
-                      <Icon name="menu-right-outline" size={18} />
-                      {node.MENUNAME}
+                      <Icon name={node.ParentIcon} size={18} />
+                      {'    ' + node.MENUNAME}
                     </Text>
                   )}
                   {!hasChildrenNodes && (
